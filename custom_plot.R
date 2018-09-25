@@ -278,3 +278,127 @@ dev.off()
 
 
 
+#***********************************************************************************
+
+##Per residue energy contribution Barplots
+#prepared by Arnold
+
+rm(list=ls())
+#install.packages("gplots")
+library(gplots)
+
+
+#getting the directory all set up
+setwd('/home/path/to/current/working/directory/')
+#open energyMapIn.dat, save as csv sep by ','. Open .csv add column labels Residue and Contribution_energy
+#Retrieve collumn 1 of residues conjoined to their respective numbering from contrib_energy.dat
+#Paste on Residues collumn to replace the bare numbers
+# enery_mapin looks:      Residue  Contribution_energy
+#                         ALA1     0.7893
+#                         PRO2     -5.7753
+
+
+
+#importing data
+options(stringsAsFactors=FALSE)
+h_comp1 = read.table('/home/path/to/data/directory/energyMapIn.csv',sep=',', header = TRUE, quote="'", stringsAsFactors=FALSE, fill=TRUE) 
+
+#creating the data frame
+h_bfe = data.frame(Residue=h_comp1$Residues, 
+                   h_comp1 = h_comp1$Contribution_energy,
+                   h_comp2 = h_comp2$Contribution_energy,
+                   h_endocomp1 = h_endocomp1$Contribution_energy,
+                   h_endocomp2 = h_endocomp2$Contribution_energy) 
+
+#Plotting
+png(filename ="png_fbenergy_combi_Hs_.png",width = 17.78, height = 9.0, units = 'cm', res=300)
+#tiff(filename ="tiff_fbenergy_combi_Hs_.tiff",width = 17.78, height = 9.0, units = 'cm', res=300)
+
+op = par(mfrow=c(2,2), mgp = c(0.2, 0.2, 0), oma = c(1.1,1.7,0.2,0) + 0.1 ) #2x2 plotting area
+
+par(mar = c(0.8, 0.45, 0.7, 0.3) + 0.2)       #Add room for rotated labels 6=bottom axis, 4=left axis, 3=top, 1=right axis
+at_tick <- seq(1,(length(h_bfe$h_comp1) + 1),50)   # create positions for tick marks, one more than number of bars
+at_minr <- seq(25,(length(h_bfe$h_comp1) + 1),50)   #vector to which minor ticks should be added
+
+par(family="Times")     #change font
+barplot2(h_bfe$h_comp1,
+         #main="Gbind per-residue contribution", #Exclude header 
+         ylab = "",
+         xlab = "",
+         #cex.lab=1.6, #size of x and y labels
+         axisnames = FALSE,
+         space = 0,                                           #No spaces in between bars
+         axes = FALSE,                                        #get rid of axes
+         ylim=c(-12,12),                                      #y limits
+         xaxs = "i",yaxs = "i",                              #both axes should start at zero
+         #width =  c(1,3),                                    #Bar width, works well with xlim
+         #xlim = c(1,600+max(e_frame$Contribution_energy)),
+         col = "black")                                   #bars with different colors
+                 
+        #Insert y label closer to axis
+        #title(ylab="Total binding energy (kJ/mol)", line=2.5, cex.lab=1.5, font.lab=2)
+        #title(xlab = "Residues", line=2.5, cex.lab=1.5, font.lab=2)  
+
+
+         #Add axes to figure
+         axis(side=2, at=seq(-12,12, by=4),lwd=1.8, pos = 0.0, las=2, tck = 0.03, font=2, cex.axis=0.8) #customise y-axis, limits -20, 20, tick breaks every 5, pos=1. position y axis at x=0, las=2 labels are perpendicular
+         rug(x = seq(-10,10, by = 4), tck = 0.015,lwd = 1.8,  side = 2) #minor ticks
+         axis(side=1, at = at_tick - 1, lwd=1.8,labels = FALSE, tck = 0.03)       #add x-axis with offset positions, with ticks, but without labels, lwd=bold.
+         rug(x = at_minr-1, tck = 0.015,lwd = 1.8,  side = 1)
+         
+         
+         axis(side=4, at=seq(-12,12, by=4),lwd=1.8, las=2,labels = FALSE, tck = 0.03) #customise y-axis, limits -20, 20, tick breaks every 5, pos=1. position y axis at x=0, las=2 labels are perpendicular
+         rug(x = seq(-10,10, by = 4), tck = 0.015,lwd = 1.8,  side = 4)
+         axis(side=3, at = at_tick - 1, lwd=1.8,labels = FALSE, tck = 0.03) #tck = ticks inside and length = 0.035
+         rug(x = at_minr - 1, tck = 0.015,lwd = 1.8,  side = 3)
+         
+         #box(lwd=2.0)                                                 #lwd increase font size of box frame
+        
+         #Paste labels 
+         text(at_tick, 
+             par("usr")[3]-1.20,             #3 = specifies on which x-axis to place labels: on lower axis at ylim, 0.70= space between tickmarks and labels
+             #srt = 90,                       #rotate 90 degrees
+             adj= 0.5,                         #Position labels, inside=-1
+             xpd = TRUE,
+             labels = paste(0 + seq(0, (length(h_bfe$h_comp1)), 50)), #paste numerical labels
+             cex=0.8,                        #size of labels
+             lwd=5.0, font = 2)                        #make labels bold
+         
+         #insert labels to bar peaks
+         text(h_bfe$h_comp1, labels = ifelse(h_bfe$h_comp1 > 5, h_bfe$Residue, NA),cex=0.7,col='black',adj = c(0,-0.3), lwd=1.0, font = 2)# font = 2 bold #not sure of this but it works. 5=cutoff
+         text(h_bfe$h_comp1, labels = ifelse(h_bfe$h_comp1 < -5, h_bfe$Residue, NA),cex=0.7, col='black',adj = c(0,1.0), lwd=1.0,   font = 2) #cex = textsize, adj=indent label abit
+         
+         #Overlay rectangular shades on regions showing substantial contributions
+         rect(165,par("usr")[3],166,par("usr")[4],col= rgb(0,0,1,alpha=0.3),border=NA) #bottom, top, left, right
+         rect(377,par("usr")[3],399,par("usr")[4],col= rgb(0,0,1,alpha=0.3),border=NA) #bottom, top, left, right
+         rect(408,par("usr")[3],417,par("usr")[4],col= rgb(0,0,1,alpha=0.3),border=NA) #bottom, top, left, right
+         rect(438,par("usr")[3],455,par("usr")[4],col= rgb(0,0,1,alpha=0.3),border=NA) #bottom, top, left, right 
+         rect(474,par("usr")[3],481,par("usr")[4],col= rgb(0,0,1,alpha=0.3),border=NA) #bottom, top, left, right
+         rect(498,par("usr")[3],529,par("usr")[4],col= rgb(0,0,1,alpha=0.3),border=NA) #bottom, top, left, right
+
+         #Insert legend
+         legend(30,16.3, # places a legend at the appropriate place c(“Health”,”Defense”), 
+                c("Hsp72-SANC00132 run1"),# puts text in the legend
+                cex=0.9, #font size
+                y.intersp=1.1, #horizontal space between text
+                lty=c(1), # gives the legend appropriate symbols (lines)
+                lwd=c(4),col=c("black"),# gives the legend lines their width and the correct color and width
+                xpd=TRUE, #outside box
+                text.font = 2,
+                bty = "n" ) #remove the box around
+
+         ###number labels
+         lgnd <-legend(-75,18.1, # places a legend at the appropriate place c(“Health”,”Defense”), 
+                       c( "(i)"),# puts text in the legend
+                       horiz = FALSE,
+                       cex=1.4, #font size
+                       #y.intersp=0.75, #horizontal space between text
+                       #x.intersp=0.4,
+                       #ncol=5,
+                       #lty=c(1,1), # gives the legend appropriate symbols (lines)
+                       #lwd=c(4,4),col=c("black", "red","blue", "green4", "magenta3"),# gives the legend lines their width and the correct color and width
+                       xpd=NA, #outside box
+                       text.font = 2,#bold
+                       #text.width = 15500, #moves the columns closer together
+                       bty = "n")  #add the box around the legend 
+dev.off()
